@@ -9,6 +9,19 @@ namespace MinhaApi.Controllers
     {
         private static List<Estado> listaEstado = new List<Estado>();
 
+        [HttpGet("estado")]
+        public IActionResult GetEstados()
+        {
+            return Ok(listaEstado);
+        }
+
+        [HttpPost("estado")]
+        public IActionResult PostEstado([FromBody] Estado estado)
+        {
+            listaEstado.Add(estado);
+            return Ok("Estado cadastrado");
+        }
+
         [HttpGet]
         public IActionResult Index()
         {

@@ -33,3 +33,4 @@ D:\Projeto Api c#\MinhaApi\obj\Debug\net8.0\MinhaApi.genruntimeconfig.cache
 D:\Projeto Api c#\MinhaApi\obj\Debug\net8.0\ref\MinhaApi.dll
 D:\Projeto Api c#\MinhaApi\bin\Debug\net8.0\appsettings.Production.json
 D:\Projeto Api c#\MinhaApi\bin\Debug\net8.0\appsettings.Stagin.json
+D:\Projeto Api c#\MinhaApi\obj\Debug\net8.0\MinhaApi.sourcelink.json
