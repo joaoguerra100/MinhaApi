@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using MinhaApi.Models;
 
 namespace MinhaApi.Controllers
 {
@@ -6,6 +7,8 @@ namespace MinhaApi.Controllers
     [Route("[controller]")]
     public class HomeController : Controller
     {
+        private static List<Estado> listaEstado = new List<Estado>();
+
         [HttpGet]
         public IActionResult Index()
         {
