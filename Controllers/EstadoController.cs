@@ -16,7 +16,7 @@ namespace MinhaApi.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetEstados()
+        public async Task<IActionResult> GetEstados()
         {
             try
             {
@@ -30,12 +30,12 @@ namespace MinhaApi.Controllers
         }
 
         [HttpPost]
-        public IActionResult PostEstado([FromBody] Estado estado)
+        public async Task<IActionResult> PostEstado([FromBody] Estado estado)
         {
             try
             {
-                _context.Estado.Add(estado);
-                var valor = _context.SaveChanges();
+                await _context.Estado.AddAsync(estado);
+                var valor = await _context.SaveChangesAsync();
                 if (valor == 1)
                 {
                     return Ok("Sucesso, estado incluido");
@@ -52,12 +52,12 @@ namespace MinhaApi.Controllers
         }
 
         [HttpPut]
-        public IActionResult PutEstado([FromBody] Estado estado)
+        public async Task<IActionResult> PutEstado([FromBody] Estado estado)
         {
             try
             {
                 _context.Estado.Update(estado);
-                var valor = _context.SaveChanges();
+                var valor = await _context.SaveChangesAsync();
                 if (valor == 1)
                 {
                     return Ok("Sucesso, estado alterado");
@@ -74,16 +74,16 @@ namespace MinhaApi.Controllers
         }
 
         [HttpDelete("{sigla}")]
-        public IActionResult DeleteEstado([FromRoute] string sigla)
+        public async Task<IActionResult> DeleteEstado([FromRoute] string sigla)
         {
             try
             {
-                var estado = _context.Estado.Find(sigla);
+                var estado = await _context.Estado.FindAsync(sigla);
 
                 if (estado.Sigla == sigla && !string.IsNullOrEmpty(estado.Sigla))
                 {
                     _context.Estado.Remove(estado);
-                    var valor = _context.SaveChanges();
+                    var valor = await _context.SaveChangesAsync();
                     if (valor == 1)
                     {
                         return Ok("Sucesso, estado excluido");
@@ -106,11 +106,11 @@ namespace MinhaApi.Controllers
         }
 
         [HttpGet("{sigla}")]
-        public IActionResult GetEstado([FromRoute] string sigla)
+        public async Task<IActionResult> GetEstado([FromRoute] string sigla)
         {
             try
             {
-                var estado = _context.Estado.Find(sigla);
+                var estado = await _context.Estado.FindAsync(sigla);
 
                 if (estado.Sigla == sigla && !string.IsNullOrEmpty(estado.Sigla))
                 {
@@ -127,9 +127,9 @@ namespace MinhaApi.Controllers
                 return BadRequest($"Erro, consulta de estado. Exceçao: {e.Message}");
             }
         }
-        
+
         [HttpGet("Pesquisa")]
-        public IActionResult GetEstadoPesquisa([FromQuery] string valor)
+        public async Task<IActionResult> GetEstadoPesquisa([FromQuery] string valor)
         {
             try
             {
@@ -140,6 +140,44 @@ namespace MinhaApi.Controllers
                             select o;
 
                 return Ok(lista);
+
+            }
+            catch (Exception e)
+            {
+                return BadRequest($"Erro, pesquisa de estado. Exceçao: {e.Message}");
+            }
+        }
+        
+        [HttpGet("Paginacao")]
+        public async Task<IActionResult> GetEstadoPaginacao([FromQuery] string valor,int skip, int take, bool ordemDesc)
+        {
+            try
+            {
+                //Query Criteria
+                var lista = from o in _context.Estado.ToList()
+                            where o.Sigla.ToUpper().Contains(valor.ToUpper())
+                            || o.Nome.ToUpper().Contains(valor.ToUpper())
+                            select o;
+                if (ordemDesc)
+                {
+                    lista = from o in lista
+                            orderby o.Nome descending
+                            select o;
+                }
+                else
+                {
+                    lista = from o in lista
+                            orderby o.Nome ascending
+                            select o;
+                }
+
+                var qtde = lista.Count();
+
+                lista = lista.Skip(skip).Take(take).ToList();
+
+                var paginacaoResponse = new PaginacaoResponse<Estado>(lista, qtde, skip, take);
+
+                return Ok(paginacaoResponse);
                 
             }
             catch (Exception e)

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace MinhaApi.Models
 {
@@ -19,8 +20,9 @@ namespace MinhaApi.Models
         {
             Id = Guid.NewGuid();
         }
-        
+
         //Relacionamento Entity Frameword
+        [JsonIgnore]
         public Estado Estado { get; set; }
     }
 }
