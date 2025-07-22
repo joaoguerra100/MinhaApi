@@ -1,5 +1,9 @@
 using MinhaApi.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using MinhaApi.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -10,6 +14,31 @@ builder.Services.AddDbContext<MinhaApiDbContext>(x => x.UseNpgsql(connectionStri
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+var chave = Encoding.ASCII.GetBytes(builder.Configuration.GetSection("Chave").Get<string>());
+
+builder.Services.AddAuthentication(
+    x =>
+    {
+        x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    }
+).AddJwtBearer(
+    x =>
+    {
+        x.RequireHttpsMetadata = false;
+        x.SaveToken = true;
+        x.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(chave),
+            ValidateIssuer = false,
+            ValidateAudience = false
+        };
+    }
+);
+
+builder.Services.AddSingleton<TokenService>();
 
 var app = builder.Build();
 
@@ -42,6 +71,8 @@ var summaries = new[]
 /* .WithName("GetWeatherForecast") */
 /* .WithOpenApi(); */
 
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 app.Run();
 
