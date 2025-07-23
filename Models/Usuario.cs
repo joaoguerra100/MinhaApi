@@ -16,7 +16,7 @@ namespace MinhaApi.Models
         public string Login { get; set; }
 
         [Required(ErrorMessage = "O campo Senha e obrigatorio")]
-        [StringLength(20, MinimumLength = 3, ErrorMessage = "O campo Senha deve ter entre 3 e 20 caracteres")]
+        [StringLength(100, MinimumLength = 3, ErrorMessage = "O campo Senha deve ter entre 3 e 20 caracteres")]
         public string Password { get; set; }
 
         [Required(ErrorMessage = "O campo Funcao e obrigatorio")]

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MinhaApi.Data;
 using MinhaApi.Models;
@@ -6,6 +7,7 @@ namespace MinhaApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class EstadoController : Controller
     {
         private readonly MinhaApiDbContext _context;
@@ -30,6 +32,7 @@ namespace MinhaApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Gerente,Empregado")]
         public async Task<IActionResult> PostEstado([FromBody] Estado estado)
         {
             try
@@ -52,6 +55,7 @@ namespace MinhaApi.Controllers
         }
 
         [HttpPut]
+        [Authorize(Roles = "Gerente,Empregado")]
         public async Task<IActionResult> PutEstado([FromBody] Estado estado)
         {
             try
@@ -74,6 +78,7 @@ namespace MinhaApi.Controllers
         }
 
         [HttpDelete("{sigla}")]
+        [Authorize(Roles = "Gerente")]
         public async Task<IActionResult> DeleteEstado([FromRoute] string sigla)
         {
             try
@@ -147,17 +152,25 @@ namespace MinhaApi.Controllers
                 return BadRequest($"Erro, pesquisa de estado. Exceçao: {e.Message}");
             }
         }
-        
+
         [HttpGet("Paginacao")]
-        public async Task<IActionResult> GetEstadoPaginacao([FromQuery] string valor,int skip, int take, bool ordemDesc)
+        public async Task<IActionResult> GetEstadoPaginacao([FromQuery] string? valor, int skip, int take, bool ordemDesc)
         {
             try
             {
                 //Query Criteria
                 var lista = from o in _context.Estado.ToList()
-                            where o.Sigla.ToUpper().Contains(valor.ToUpper())
-                            || o.Nome.ToUpper().Contains(valor.ToUpper())
                             select o;
+
+                // caso passe algum valor para a variavel
+                if (!string.IsNullOrEmpty(valor))
+                {
+                    lista = from o in lista
+                            where o.Sigla.ToUpper().Contains(valor.ToUpper())
+                                    || o.Nome.ToUpper().Contains(valor.ToUpper())
+                            select o;
+                }
+                            
                 if (ordemDesc)
                 {
                     lista = from o in lista
@@ -173,12 +186,13 @@ namespace MinhaApi.Controllers
 
                 var qtde = lista.Count();
 
-                lista = lista.Skip(skip).Take(take).ToList();
+                // (skip - 1) * take) faz com que no skip a lista nao comece do indice [0] e sim do 1 e que pegue a quantidade certa do take
+                lista = lista.Skip((skip - 1) * take).Take(take).ToList();
 
                 var paginacaoResponse = new PaginacaoResponse<Estado>(lista, qtde, skip, take);
 
                 return Ok(paginacaoResponse);
-                
+
             }
             catch (Exception e)
             {

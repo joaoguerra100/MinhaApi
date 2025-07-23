@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MinhaApi.Data;
 using MinhaApi.Models;
@@ -7,6 +8,7 @@ namespace MinhaApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class UsuarioController : Controller
     {
         private readonly MinhaApiDbContext _context;
@@ -20,6 +22,7 @@ namespace MinhaApi.Controllers
 
         [HttpPost]
         [Route("Login")]
+        [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] UsuarioLogin usuarioLogin)
         {
             var usuario = _context.Usuario.Where(x => x.Login == usuarioLogin.Login).FirstOrDefault();
@@ -27,7 +30,10 @@ namespace MinhaApi.Controllers
             {
                 return NotFound("Usuario invalido.");
             }
-            if (usuario.Password != usuarioLogin.Password)
+
+            var passwordHash = MD5Hash.CalcHash(usuarioLogin.Password);
+
+            if (usuario.Password != passwordHash)
             {
                 return BadRequest("Senha invalida");
             }
@@ -60,6 +66,7 @@ namespace MinhaApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Gerente,Empregado")]
         public async Task<IActionResult> PostUsuario([FromBody] Usuario usuario)
         {
             try
@@ -69,6 +76,10 @@ namespace MinhaApi.Controllers
                 {
                     return BadRequest($"Erro, informaçao de Login invalido");
                 }
+
+                string passwordHash = MD5Hash.CalcHash(usuario.Password);
+
+                usuario.Password = passwordHash;
 
                 await _context.Usuario.AddAsync(usuario);
                 var valor = await _context.SaveChangesAsync();
@@ -88,10 +99,14 @@ namespace MinhaApi.Controllers
         }
 
         [HttpPut]
+        [Authorize(Roles = "Gerente,Empregado")]
         public async Task<IActionResult> PutUsuario([FromBody] Usuario usuario)
         {
             try
             {
+                string passwordHash = MD5Hash.CalcHash(usuario.Password);
+                usuario.Password = passwordHash;
+
                 _context.Usuario.Update(usuario);
                 var valor = await _context.SaveChangesAsync();
                 if (valor == 1)
@@ -110,6 +125,7 @@ namespace MinhaApi.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Gerente")]
         public async Task<IActionResult> DeleteUsuario([FromRoute] Guid id)
         {
             try

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,7 @@ namespace MinhaApi.Controllers
 {
     [ApiController]
     [Route("api/[Controller]")]
+    [Authorize]
     public class CidadeController : Controller
     {
         private readonly MinhaApiDbContext _context;
@@ -45,7 +47,7 @@ namespace MinhaApi.Controllers
                 {
                     return NotFound("Erro, Cidade nao existe");
                 }
-                
+
             }
             catch (Exception e)
             {
@@ -71,14 +73,21 @@ namespace MinhaApi.Controllers
         }
 
         [HttpGet("Paginacao")]
-        public async Task<IActionResult> GetCidadePaginacao([FromQuery] string valor, int skip, int take, bool ordemDesc)
+        public async Task<IActionResult> GetCidadePaginacao([FromQuery] string? valor, int skip, int take, bool ordemDesc)
         {
             try
             {
                 var lista = from o in _context.Cidade.ToList()
-                            where o.Nome.ToUpper().Contains(valor.ToUpper())
+                            select o;
+
+                if (!string.IsNullOrEmpty(valor))
+                {
+                    lista = from o in lista
+                        where o.Nome.ToUpper().Contains(valor.ToUpper())
                             || o.EstadoSigla.ToUpper().Contains(valor.ToUpper())
                             select o;
+                }
+                            
                 if (ordemDesc)
                 {
                     lista = from o in lista
@@ -93,7 +102,7 @@ namespace MinhaApi.Controllers
                 }
                 var qtde = lista.Count();
 
-                lista = lista.Skip(skip).Take(take).ToList();
+                lista = lista.Skip((skip - 1) * take).Take(take).ToList();
 
                 var paginaResponse = new PaginacaoResponse<Cidade>(lista, qtde, skip, take);
 
@@ -106,6 +115,7 @@ namespace MinhaApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Gerente,Empregado")]
         public async Task<IActionResult> PostCidade([FromBody] Cidade cidade)
         {
             try
@@ -128,6 +138,7 @@ namespace MinhaApi.Controllers
         }
 
         [HttpPut]
+        [Authorize(Roles = "Gerente,Empregado")]
         public async Task<IActionResult> PutCidade([FromBody] Cidade cidade)
         {
             try
@@ -150,6 +161,7 @@ namespace MinhaApi.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Gerente")]
         public async Task<IActionResult> DeleteCidade([FromRoute] Guid id)
         {
             try

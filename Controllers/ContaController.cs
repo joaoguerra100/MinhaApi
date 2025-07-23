@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MinhaApi.Data;
@@ -8,6 +9,7 @@ namespace MinhaApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ContaController : Controller
     {
         private readonly MinhaApiDbContext _context;
@@ -70,31 +72,38 @@ namespace MinhaApi.Controllers
         }
 
         [HttpGet("Paginacao")]
-        public async Task<IActionResult> GetContaPaginacao([FromQuery] string valor, int skip, int take, bool ordemDesc)
+        public async Task<IActionResult> GetContaPaginacao([FromQuery] string? valor, int skip, int take, bool ordemDesc)
         {
             try
             {
                 var lista = from o in _context.Conta.Include(o => o.Pessoa).ToList()
+                            select o;
+
+
+                if (!string.IsNullOrEmpty(valor))
+                {
+                    lista = from o in lista
                             where o.Descricao.ToUpper().Contains(valor.ToUpper())
                             || o.Pessoa.Nome.ToUpper().Contains(valor.ToUpper())
                             select o;
+                }
 
                 if (ordemDesc)
-                {
-                    lista = from o in lista
-                            orderby o.Descricao descending
-                            select o;
-                }
-                else
-                {
-                    lista = from o in lista
-                            orderby o.Descricao ascending
-                            select o;
-                }
+                    {
+                        lista = from o in lista
+                                orderby o.Descricao descending
+                                select o;
+                    }
+                    else
+                    {
+                        lista = from o in lista
+                                orderby o.Descricao ascending
+                                select o;
+                    }
 
                 var qtde = lista.Count();
 
-                lista = lista.Skip(skip).Take(take).ToList();
+                lista = lista.Skip((skip - 1) * take).Take(take).ToList();
 
                 var paginacaoResponse = new PaginacaoResponse<Conta>(lista, qtde, skip, take);
 
@@ -124,6 +133,7 @@ namespace MinhaApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Gerente,Empregado")]
         public async Task<IActionResult> PostConta([FromBody] Conta conta)
         {
             try
@@ -146,6 +156,7 @@ namespace MinhaApi.Controllers
         }
 
         [HttpPut]
+        [Authorize(Roles = "Gerente,Empregado")]
         public async Task<IActionResult> PutConta([FromBody] Conta conta)
         {
             try
@@ -168,6 +179,7 @@ namespace MinhaApi.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Gerente")]
         public async Task<IActionResult> DeleteConta([FromRoute] Guid id)
         {
             try
@@ -194,6 +206,6 @@ namespace MinhaApi.Controllers
                 return BadRequest($"Erro ao deletar conta. Exeçao: {e.Message}");
             }
         }
-        
+
     }
 }
